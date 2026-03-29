@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta property="og:title" content="나만의 숲길 여행 코스 🌿">
+<meta property="og:description" content="체력·목적·동행에 맞게 AI가 등산 코스와 맛집을 3초 만에 추천해드려요.">
+<meta property="og:type" content="website">
+<title>숲길 여행 일정 생성기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --forest-deep: #1a2e1a;
+    --forest-mid: #2e4a2e;
+    --forest-light: #4a7c4a;
+    --forest-bright: #6aab6a;
+    --moss: #8fb87a;
+    --sage: #b5c9a0;
+    --beige-warm: #f5ede0;
+    --beige-light: #faf5ee;
+    --cream: #fffdf8;
+    --earth-dark: #a08060;
+    --text-dark: #1a2410;
+    --text-mid: #3a4e2e;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Noto Sans KR',sans-serif; background:var(--beige-light); color:var(--text-dark); min-height:100vh; overflow-x:hidden; }
+
+  .page { display:none; }
+  .page.active { display:block; }
+
+  /* ── HERO ── */
+  .hero {
+    position:relative; min-height:100svh; background:var(--forest-deep);
+    display:flex; flex-direction:column; justify-content:flex-end; padding:0 0 48px; overflow:hidden;
+  }
+  .hero-bg {
+    position:absolute; inset:0;
+    background: radial-gradient(ellipse 120% 60% at 50% 0%,#3a6e3a22 0%,transparent 60%),
+                radial-gradient(ellipse 80% 80% at 80% 110%,#1a3a1a44 0%,transparent 60%),
+                linear-gradient(175deg,#0d1f0d 0%,#1e3a1e 40%,#243524 100%);
+  }
+  .tree-silhouettes {
+    position:absolute; bottom:0; left:0; right:0; height:55%; opacity:0.18;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300' preserveAspectRatio='xMidYMax slice'%3E%3Cpolygon points='60,300 80,180 100,300' fill='%234a7c4a'/%3E%3Cpolygon points='55,300 80,150 105,300' fill='%234a7c4a'/%3E%3Cpolygon points='50,300 80,120 110,300' fill='%234a7c4a'/%3E%3Cpolygon points='150,300 175,200 200,300' fill='%234a7c4a'/%3E%3Cpolygon points='145,300 175,165 205,300' fill='%234a7c4a'/%3E%3Cpolygon points='140,300 175,130 210,300' fill='%234a7c4a'/%3E%3Cpolygon points='270,300 295,210 320,300' fill='%234a7c4a'/%3E%3Cpolygon points='265,300 295,175 325,300' fill='%234a7c4a'/%3E%3Cpolygon points='260,300 295,140 330,300' fill='%234a7c4a'/%3E%3Cpolygon points='350,300 370,220 390,300' fill='%234a7c4a'/%3E%3Cpolygon points='345,300 370,185 395,300' fill='%234a7c4a'/%3E%3Cpolygon points='340,300 370,150 400,300' fill='%234a7c4a'/%3E%3C/svg%3E") bottom/cover no-repeat;
+  }
+  .firefly { position:absolute; border-radius:50%; background:#b5e87a; box-shadow:0 0 6px 2px #b5e87a88; animation:float-fly 6s ease-in-out infinite; }
+  .firefly:nth-child(1){width:4px;height:4px;top:20%;left:15%;animation-duration:7s;}
+  .firefly:nth-child(2){width:3px;height:3px;top:35%;left:75%;animation-delay:1.5s;animation-duration:5s;}
+  .firefly:nth-child(3){width:5px;height:5px;top:55%;left:30%;animation-delay:3s;animation-duration:8s;}
+  .firefly:nth-child(4){width:3px;height:3px;top:25%;left:55%;animation-delay:0.8s;}
+  .firefly:nth-child(5){width:4px;height:4px;top:60%;left:85%;animation-delay:2s;animation-duration:7s;}
+  @keyframes float-fly{0%,100%{transform:translateY(0) scale(1);opacity:0.3}50%{transform:translateY(-18px) scale(1.3);opacity:0.9}}
+
+  .hero-content { position:relative; z-index:2; padding:0 24px; }
+  .hero-badge {
+    display:inline-flex; align-items:center; gap:6px;
+    background:rgba(106,171,106,0.15); border:1px solid rgba(106,171,106,0.35);
+    border-radius:100px; padding:6px 14px; font-size:11px; font-weight:500;
+    color:var(--moss); letter-spacing:0.08em; margin-bottom:20px; animation:fadeUp 0.6s ease both;
+  }
+  .badge-dot{width:6px;height:6px;border-radius:50%;background:var(--moss);animation:pulse-dot 2s ease infinite;}
+  @keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
+  .hero-title {
+    font-family:'Noto Serif KR',serif; font-size:clamp(26px,7vw,36px); font-weight:900;
+    line-height:1.35; color:var(--beige-warm); margin-bottom:20px; animation:fadeUp 0.6s 0.1s ease both;
+  }
+  .hero-title em { font-style:normal; color:var(--moss); }
+  .hero-sub { font-size:13px; color:rgba(245,237,224,0.55); line-height:1.7; font-weight:300; animation:fadeUp 0.6s 0.2s ease both; margin-bottom:32px; }
+  .scroll-hint { display:flex; align-items:center; gap:8px; color:rgba(245,237,224,0.35); font-size:11px; letter-spacing:0.1em; animation:fadeUp 0.6s 0.4s ease both; }
+  .scroll-arrow { animation:bounce-down 1.6s ease infinite; }
+  @keyframes bounce-down{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+  /* ── FORM ── */
+  .form-section { background:var(--cream); border-radius:28px 28px 0 0; margin-top:-28px; position:relative; z-index:10; padding:36px 22px 40px; box-shadow:0 -8px 40px rgba(0,0,0,0.12); }
+  .form-handle { width:36px; height:4px; background:var(--sage); border-radius:2px; margin:0 auto 28px; }
+  .section-label { font-size:11px; font-weight:700; letter-spacing:0.14em; color:var(--forest-bright); text-transform:uppercase; margin-bottom:6px; }
+  .form-group { margin-bottom:28px; }
+  .form-group-title { font-family:'Noto Serif KR',serif; font-size:17px; font-weight:700; color:var(--forest-deep); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .form-group-title .icon { font-size:20px; line-height:1; }
+  .tags { display:flex; flex-wrap:wrap; gap:9px; }
+  .tag {
+    padding:10px 16px; border-radius:100px; border:1.5px solid #d6e8cc;
+    background:var(--beige-light); color:var(--text-mid); font-size:13px; font-weight:500;
+    cursor:pointer; transition:all 0.22s cubic-bezier(0.34,1.56,0.64,1);
+    font-family:'Noto Sans KR',sans-serif; user-select:none; -webkit-tap-highlight-color:transparent;
+  }
+  .tag.active { background:var(--forest-mid); border-color:var(--forest-mid); color:var(--beige-warm); transform:scale(1.04); box-shadow:0 4px 16px rgba(46,74,46,0.25); }
+  .region-select {
+    width:100%; padding:14px 18px; border-radius:14px; border:1.5px solid #d6e8cc;
+    background:var(--beige-light); color:var(--text-dark); font-size:14px;
+    font-family:'Noto Sans KR',sans-serif; font-weight:500; cursor:pointer;
+    appearance:none; -webkit-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234a7c4a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 16px center; background-size:16px; outline:none;
+    transition:border-color 0.2s,box-shadow 0.2s;
+  }
+  .region-select:focus { border-color:var(--forest-light); box-shadow:0 0 0 3px rgba(74,124,74,0.12); }
+  .divider { height:1px; background:linear-gradient(90deg,transparent,#d6e8cc,transparent); margin:28px 0; }
+  .cta-wrap { padding-top:8px; }
+  .cta-btn {
+    width:100%; padding:20px; border-radius:18px; border:none;
+    background:linear-gradient(135deg,var(--forest-mid) 0%,var(--forest-deep) 100%);
+    color:var(--beige-warm); font-family:'Noto Serif KR',serif; font-size:18px; font-weight:700;
+    letter-spacing:0.04em; cursor:pointer; position:relative; overflow:hidden;
+    box-shadow:0 8px 28px rgba(26,46,26,0.35);
+    transition:transform 0.18s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.18s;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+  }
+  .cta-btn:active { transform:scale(0.97); }
+  .cta-btn.loading { opacity:0.7; pointer-events:none; }
+  .cta-shine { position:absolute; top:-50%; left:-50%; width:200%; height:200%; background:conic-gradient(from 0deg,transparent 0deg,rgba(181,232,122,0.06) 90deg,transparent 180deg); animation:rotate-shine 6s linear infinite; }
+  @keyframes rotate-shine{to{transform:rotate(360deg)}}
+  .cta-arrow { font-size:20px; transition:transform 0.2s; }
+  .cta-btn:hover .cta-arrow { transform:translateX(4px); }
+  .cta-sub { text-align:center; font-size:11px; color:var(--earth-dark); margin-top:12px; letter-spacing:0.04em; }
+
+  /* Toast */
+  .toast {
+    position:fixed; bottom:32px; left:50%; transform:translateX(-50%) translateY(80px);
+    background:var(--forest-deep); color:var(--beige-warm); padding:14px 24px; border-radius:100px;
+    font-size:13px; font-weight:500; box-shadow:0 8px 32px rgba(0,0,0,0.25); z-index:9999;
+    transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1),opacity 0.3s; opacity:0; white-space:nowrap;
+  }
+  .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+
+  /* ── RESULT PAGE ── */
+  #resultPage { background:var(--beige-light); min-height:100vh; }
+
+  .loading-screen {
+    position:fixed; inset:0; background:var(--forest-deep);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px;
+    z-index:500; transition:opacity 0.5s ease;
+  }
+  .loading-screen.hidden { opacity:0; pointer-events:none; }
+  .loading-trees { display:flex; gap:8px; align-items:flex-end; height:50px; }
+  .ltree { width:8px; border-radius:4px 4px 0 0; background:var(--forest-bright); animation:grow-tree 1.2s ease-in-out infinite; }
+  .ltree:nth-child(1){height:30px;animation-delay:0s;}
+  .ltree:nth-child(2){height:45px;animation-delay:0.15s;}
+  .ltree:nth-child(3){height:50px;animation-delay:0.3s;}
+  .ltree:nth-child(4){height:38px;animation-delay:0.45s;}
+  .ltree:nth-child(5){height:25px;animation-delay:0.6s;}
+  @keyframes grow-tree{0%,100%{transform:scaleY(0.6);opacity:0.4}50%{transform:scaleY(1);opacity:1}}
+  .loading-text { color:var(--sage); font-size:14px; letter-spacing:0.06em; animation:pulse-text 1.5s ease infinite; }
+  .loading-sub { color:rgba(181,201,160,0.4); font-size:12px; }
+  @keyframes pulse-text{0%,100%{opacity:0.5}50%{opacity:1}}
+
+  .result-header { background:var(--forest-deep); padding:24px 22px 32px; position:relative; overflow:hidden; }
+  .result-header-bg { position:absolute; inset:0; background:linear-gradient(135deg,#0d1f0d 0%,#243524 100%); }
+  .back-btn {
+    position:relative; z-index:2; display:inline-flex; align-items:center; gap:6px;
+    color:var(--sage); font-size:13px; font-weight:500;
+    background:rgba(106,171,106,0.12); border:1px solid rgba(106,171,106,0.25);
+    border-radius:100px; padding:8px 16px; cursor:pointer; margin-bottom:20px;
+    transition:background 0.2s; font-family:'Noto Sans KR',sans-serif;
+  }
+  .back-btn:hover { background:rgba(106,171,106,0.22); }
+  .result-chips { position:relative; z-index:2; display:flex; flex-wrap:wrap; gap:7px; margin-bottom:16px; }
+  .chip { background:rgba(143,184,122,0.15); border:1px solid rgba(143,184,122,0.3); color:var(--moss); border-radius:100px; padding:5px 12px; font-size:11px; font-weight:600; letter-spacing:0.06em; }
+  .result-header-title { position:relative; z-index:2; font-family:'Noto Serif KR',serif; font-size:22px; font-weight:900; color:var(--beige-warm); line-height:1.4; }
+  .result-header-title span { color:var(--moss); }
+
+  .result-body { padding:22px 18px 48px; }
+  .result-card {
+    background:var(--cream); border-radius:20px; padding:22px 20px; margin-bottom:16px;
+    box-shadow:0 2px 16px rgba(26,46,26,0.07);
+    opacity:0; transform:translateY(16px); animation:card-in 0.5s ease forwards;
+  }
+  .result-card:nth-child(1){animation-delay:0.05s;}
+  .result-card:nth-child(2){animation-delay:0.15s;}
+  .result-card:nth-child(3){animation-delay:0.25s;}
+  .result-card:nth-child(4){animation-delay:0.35s;}
+  .result-card:nth-child(5){animation-delay:0.45s;}
+  @keyframes card-in{to{opacity:1;transform:translateY(0)}}
+
+  .card-label { font-size:10px; font-weight:700; letter-spacing:0.16em; color:var(--forest-bright); text-transform:uppercase; margin-bottom:8px; }
+  .card-title { font-family:'Noto Serif KR',serif; font-size:18px; font-weight:700; color:var(--forest-deep); margin-bottom:12px; }
+  .card-body { font-size:14px; color:#4a5e3a; line-height:1.8; }
+  .card-body strong { color:var(--forest-deep); }
+
+  .trail-steps { display:flex; flex-direction:column; gap:12px; margin-top:14px; }
+  .trail-step { display:flex; gap:14px; align-items:flex-start; }
+  .step-num { min-width:28px; height:28px; border-radius:50%; background:var(--forest-mid); color:var(--beige-warm); font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+  .step-name { font-size:14px; font-weight:700; color:var(--forest-deep); }
+  .step-desc { font-size:12px; color:#6a7e5a; margin-top:2px; line-height:1.6; }
+
+  .restaurant-list { display:flex; flex-direction:column; gap:12px; margin-top:14px; }
+  .restaurant-item { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:14px; background:var(--beige-light); border:1px solid #e8f0e0; }
+  .rest-icon { font-size:24px; flex-shrink:0; }
+  .rest-info { flex:1; min-width:0; }
+  .rest-name { font-size:14px; font-weight:700; color:var(--forest-deep); }
+  .rest-desc { font-size:12px; color:#6a7e5a; margin-top:2px; }
+  .rest-tag { font-size:10px; font-weight:600; padding:3px 8px; border-radius:100px; background:rgba(74,124,74,0.1); color:var(--forest-light); white-space:nowrap; flex-shrink:0; }
+
+  .tip-box { background:linear-gradient(135deg,rgba(74,124,74,0.07),rgba(46,74,46,0.04)); border:1px solid rgba(74,124,74,0.18); border-radius:14px; padding:14px 16px; margin-top:14px; }
+  .tip-row { display:flex; gap:10px; align-items:flex-start; margin-bottom:8px; }
+  .tip-row:last-child { margin-bottom:0; }
+  .tip-icon { font-size:15px; flex-shrink:0; margin-top:2px; }
+  .tip-text { font-size:13px; color:#4a5e3a; line-height:1.6; }
+
+  /* Share card */
+  .share-card { background:linear-gradient(135deg,var(--forest-mid),var(--forest-deep)); border-radius:20px; padding:24px 20px; margin-bottom:16px; text-align:center; }
+  .share-card-title { font-family:'Noto Serif KR',serif; font-size:16px; font-weight:700; color:var(--beige-warm); margin-bottom:6px; }
+  .share-card-sub { font-size:12px; color:rgba(245,237,224,0.55); margin-bottom:18px; }
+  .share-buttons { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+  .share-btn {
+    display:flex; align-items:center; gap:6px; padding:11px 18px; border-radius:100px; border:none;
+    font-family:'Noto Sans KR',sans-serif; font-size:13px; font-weight:600; cursor:pointer;
+    transition:transform 0.2s,opacity 0.2s;
+  }
+  .share-btn:active { transform:scale(0.95); }
+  .share-btn.kakao { background:#FEE500; color:#3C1E1E; }
+  .share-btn.copy  { background:rgba(255,255,255,0.12); color:var(--beige-warm); border:1px solid rgba(255,255,255,0.2); }
+  .share-btn.native { background:rgba(255,255,255,0.12); color:var(--beige-warm); border:1px solid rgba(255,255,255,0.2); }
+
+  .retry-btn {
+    width:100%; padding:18px; border-radius:16px; border:none;
+    background:linear-gradient(135deg,var(--forest-mid),var(--forest-deep));
+    color:var(--beige-warm); font-family:'Noto Serif KR',serif; font-size:16px; font-weight:700;
+    cursor:pointer; box-shadow:0 6px 20px rgba(26,46,26,0.25);
+    margin-top:8px; display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .error-card { background:#fff5f5; border:1px solid #ffdddd; border-radius:20px; padding:28px 20px; text-align:center; color:#c0392b; font-size:14px; line-height:1.8; }
+</style>
+</head>
+<body>
+
+<!-- ══ PAGE 1: LANDING ══ -->
+<div id="landingPage" class="page active">
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="tree-silhouettes"></div>
+    <div class="firefly"></div><div class="firefly"></div><div class="firefly"></div>
+    <div class="firefly"></div><div class="firefly"></div>
+    <div class="hero-content">
+      <div class="hero-badge"><span class="badge-dot"></span>AI 맞춤 코스 추천</div>
+      <h1 class="hero-title">나에게 딱 맞는 <em>숲길</em>과<br>하산 후 <em>맛집</em>까지,<br>3초 만에 찾아드려요</h1>
+      <p class="hero-sub">체력·목적·동행에 맞게 AI가 최적의<br>등산 코스와 주변 맛집을 큐레이션해 드려요.</p>
+      <div class="scroll-hint"><span>아래에서 선택하기</span><span class="scroll-arrow">↓</span></div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <div class="form-handle"></div>
+
+    <div class="form-group">
+      <div class="section-label">Step 01</div>
+      <div class="form-group-title"><span class="icon">📍</span> 어느 지역으로 떠날까요?</div>
+      <select class="region-select" id="region">
+        <option value="">— 지역 선택 —</option>
+        <optgroup label="수도권"><option>서울</option><option>경기</option><option>인천</option></optgroup>
+        <optgroup label="강원·충청"><option>강원</option><option>충북</option><option>충남</option><option>대전</option><option>세종</option></optgroup>
+        <optgroup label="전라·제주"><option>전북</option><option>전남</option><option>광주</option><option>제주</option></optgroup>
+        <optgroup label="경상"><option>경북</option><option>경남</option><option>대구</option><option>부산</option><option>울산</option></optgroup>
+      </select>
+    </div>
+    <div class="divider"></div>
+
+    <div class="form-group">
+      <div class="section-label">Step 02</div>
+      <div class="form-group-title"><span class="icon">💪</span> 체력 수준은요?</div>
+      <div class="tags" data-group="fitness">
+        <button class="tag" data-value="산책 수준 (30분 이내 가벼운 코스)">🌿 산책 수준</button>
+        <button class="tag" data-value="등린이 (1~2시간 초급 코스)">🥾 등린이</button>
+        <button class="tag" data-value="중급자 (3~4시간 중급 코스)">⛰️ 꽤 다녀봤어요</button>
+        <button class="tag" data-value="프로 등산러 (5시간 이상 고난도)">🏔️ 프로 등산러</button>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <div class="form-group">
+      <div class="section-label">Step 03</div>
+      <div class="form-group-title"><span class="icon">🎯</span> 이번 산행의 목적은?</div>
+      <div class="tags" data-group="purpose">
+        <button class="tag" data-value="인생샷 건지기 (뷰 좋은 포토스팟 중심)">📸 인생샷 건지기</button>
+        <button class="tag" data-value="조용한 힐링 (자연 속 명상·휴식)">🍃 조용한 힐링</button>
+        <button class="tag" data-value="땀 빼고 다이어트 (칼로리 소모 극대화)">🔥 땀 빼고 다이어트</button>
+        <button class="tag" data-value="계절 풍경 감상 (꽃·단풍·설경 등)">🍁 계절 풍경 감상</button>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <div class="form-group">
+      <div class="section-label">Step 04</div>
+      <div class="form-group-title"><span class="icon">🧭</span> 누구와 함께?</div>
+      <div class="tags" data-group="companion">
+        <button class="tag" data-value="혼자">🙋 혼자</button>
+        <button class="tag" data-value="친구 / 연인">👫 친구 / 연인</button>
+        <button class="tag" data-value="가족">👨‍👩‍👧 가족</button>
+        <button class="tag" data-value="반려동물과 함께 (펫 동반 가능 코스 필수)">🐾 반려동물과</button>
+      </div>
+    </div>
+
+    <div class="cta-wrap">
+      <button class="cta-btn" id="ctaBtn" onclick="handleCTA()">
+        <div class="cta-shine"></div>
+        <span id="ctaBtnText">나만의 코스 만들기</span>
+        <span class="cta-arrow" id="ctaArrow">→</span>
+      </button>
+      <p class="cta-sub">✦ 무료 · 회원가입 불필요 · AI 실시간 생성</p>
+    </div>
+  </section>
+</div>
+
+<!-- ══ PAGE 2: RESULT ══ -->
+<div id="resultPage" class="page">
+  <div class="loading-screen" id="loadingScreen">
+    <div class="loading-trees">
+      <div class="ltree"></div><div class="ltree"></div><div class="ltree"></div>
+      <div class="ltree"></div><div class="ltree"></div>
+    </div>
+    <div class="loading-text">맞춤 코스를 생성하고 있어요...</div>
+    <div class="loading-sub">AI가 최적의 숲길을 찾는 중 🌿</div>
+  </div>
+
+  <div class="result-header">
+    <div class="result-header-bg"></div>
+    <button class="back-btn" onclick="goBack()">← 다시 선택하기</button>
+    <div class="result-chips" id="resultChips"></div>
+    <div class="result-header-title" id="resultTitle">나만의 숲길 코스</div>
+  </div>
+  <div class="result-body" id="resultBody"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Tag selection ──
+  document.querySelectorAll('.tags').forEach(group => {
+    group.addEventListener('click', e => {
+      const tag = e.target.closest('.tag');
+      if (!tag) return;
+      group.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+      tag.classList.add('active');
+    });
+  });
+
+  function getSelections() {
+    return {
+      region:    document.getElementById('region').value,
+      fitness:   document.querySelector('.tags[data-group="fitness"] .tag.active')?.dataset.value,
+      purpose:   document.querySelector('.tags[data-group="purpose"] .tag.active')?.dataset.value,
+      companion: document.querySelector('.tags[data-group="companion"] .tag.active')?.dataset.value,
+    };
+  }
+
+  function showToast(msg, duration=2800) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), duration);
+  }
+
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function goBack() { showPage('landingPage'); }
+
+  // ── CTA ──
+  async function handleCTA() {
+    const sel = getSelections();
+    const missing = [];
+    if (!sel.region)    missing.push('지역');
+    if (!sel.fitness)   missing.push('체력 수준');
+    if (!sel.purpose)   missing.push('목적');
+    if (!sel.companion) missing.push('동행');
+    if (missing.length > 0) { showToast('⚠️ ' + missing.join(', ') + '을(를) 선택해 주세요'); return; }
+
+    // UI: loading state
+    const btn = document.getElementById('ctaBtn');
+    btn.classList.add('loading');
+    document.getElementById('ctaBtnText').textContent = '코스 생성 중...';
+    document.getElementById('ctaArrow').textContent = '⏳';
+
+    // Setup chips
+    const short = [sel.region, sel.fitness.split(' ')[0], sel.purpose.split(' ')[0], sel.companion.split(' ')[0]];
+    document.getElementById('resultChips').innerHTML = short.map(l => `<div class="chip">${l}</div>`).join('');
+    document.getElementById('resultTitle').innerHTML = `<span>${sel.region}</span> 맞춤 숲길 코스`;
+    document.getElementById('resultBody').innerHTML = '';
+
+    // Show result page with loader
+    const loader = document.getElementById('loadingScreen');
+    loader.style.opacity = '1';
+    loader.style.pointerEvents = 'auto';
+    loader.classList.remove('hidden');
+    showPage('resultPage');
+
+    try {
+      const data = await fetchCourse(sel);
+      renderResult(data, sel);
+    } catch(err) {
+      renderError(err.message);
+    } finally {
+      loader.classList.add('hidden');
+      btn.classList.remove('loading');
+      document.getElementById('ctaBtnText').textContent = '나만의 코스 만들기';
+      document.getElementById('ctaArrow').textContent = '→';
+    }
+  }
+
+  // ── API call → Netlify Function ──
+  async function fetchCourse(sel) {
+    const res = await fetch('/.netlify/functions/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        region:    sel.region,
+        fitness:   sel.fitness,
+        purpose:   sel.purpose,
+        companion: sel.companion,
+      }),
+    });
+
+    const text = await res.text();
+    if (!res.ok) {
+      let msg = `서버 오류 (${res.status})`;
+      try { msg = JSON.parse(text).error || msg; } catch(_) {}
+      throw new Error(msg);
+    }
+    return JSON.parse(text);
+  }
+
+  // ── Render ──
+  function renderResult(d, sel) {
+    document.getElementById('resultTitle').innerHTML = `<span>${d.mountain}</span> 코스 추천`;
+
+    document.getElementById('resultBody').innerHTML = `
+      <div class="result-card">
+        <div class="card-label">🏔 추천 코스</div>
+        <div class="card-title">${d.mountain}</div>
+        <div class="card-body">
+          <span style="color:var(--forest-bright);font-size:13px;font-style:italic;">"${d.tagline}"</span><br><br>
+          ${d.overview}<br><br>
+          <strong>📏 총 거리</strong> ${d.distance} &nbsp;·&nbsp;
+          <strong>⏱ 소요시간</strong> ${d.duration} &nbsp;·&nbsp;
+          <strong>📊 난이도</strong> ${d.difficulty}
+        </div>
+      </div>
+
+      <div class="result-card">
+        <div class="card-label">🥾 등산 루트</div>
+        <div class="card-title">추천 코스 구간</div>
+        <div class="trail-steps">
+          ${d.trail.map((s,i) => `
+            <div class="trail-step">
+              <div class="step-num">${i+1}</div>
+              <div><div class="step-name">${s.name}</div><div class="step-desc">${s.desc}</div></div>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="result-card">
+        <div class="card-label">🍽 하산 후 맛집</div>
+        <div class="card-title">오늘의 맛집 Pick</div>
+        <div class="restaurant-list">
+          ${d.restaurants.map(r => `
+            <div class="restaurant-item">
+              <div class="rest-icon">${r.emoji}</div>
+              <div class="rest-info">
+                <div class="rest-name">${r.name}</div>
+                <div class="rest-desc">${r.menu} · ${r.note}</div>
+              </div>
+              <div class="rest-tag">${r.tag}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="result-card">
+        <div class="card-label">💡 오늘의 팁</div>
+        <div class="card-title">꼭 챙기세요</div>
+        <div class="tip-box">
+          ${d.tips.map(t => `
+            <div class="tip-row">
+              <span class="tip-icon">✅</span>
+              <span class="tip-text">${t}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="share-card">
+        <div class="share-card-title">이 코스, 친구에게도 공유해요 🌿</div>
+        <div class="share-card-sub">${sel.region} · ${d.mountain} 코스를 함께 즐겨보세요</div>
+        <div class="share-buttons">
+          <button class="share-btn kakao" onclick="shareKakao('${d.mountain}', '${d.tagline}')">
+            💬 카카오톡 공유
+          </button>
+          <button class="share-btn copy" onclick="copyLink()">
+            🔗 링크 복사
+          </button>
+          ${navigator.share ? `<button class="share-btn native" onclick="nativeShare('${d.mountain}', '${d.tagline}')">↑ 공유하기</button>` : ''}
+        </div>
+      </div>
+
+      <button class="retry-btn" onclick="goBack()">🌿 다른 코스 찾아보기</button>
+    `;
+  }
+
+  function renderError(msg) {
+    const isRateLimit = msg === "RATE_LIMIT";
+    document.getElementById('resultBody').innerHTML = isRateLimit ? `
+      <div class="error-card">
+        <div style="font-size:36px;margin-bottom:12px;">⏳</div>
+        <strong style="font-size:16px;color:#2e4a2e;">잠깐, AI가 너무 바빠요!</strong><br><br>
+        요청이 너무 많아서 잠시 한도가 찼어요.<br>
+        <span style="font-size:13px;color:#6a7e5a;">1~2분 후에 다시 시도해 주세요.</span><br><br>
+        <button class="retry-btn" onclick="retryAfterDelay()" id="retryBtn" style="max-width:260px;margin:0 auto;">
+          🔄 30초 후 자동 재시도
+        </button>
+        <p style="font-size:11px;color:#a08060;margin-top:10px;" id="retryCountdown"></p>
+      </div>
+    ` : `
+      <div class="error-card">
+        <div style="font-size:32px;margin-bottom:12px;">😕</div>
+        코스를 불러오는 데 실패했어요.<br>
+        <small style="font-size:12px;color:#e05050;">${msg}</small><br><br>
+        <button class="retry-btn" onclick="goBack()" style="max-width:220px;margin:0 auto;">← 다시 시도하기</button>
+      </div>
+    `;
+    if (isRateLimit) startRetryCountdown();
+  }
+
+  let retryTimer = null;
+  function startRetryCountdown() {
+    let secs = 30;
+    const cd = document.getElementById('retryCountdown');
+    if (!cd) return;
+    cd.textContent = `${secs}초 후 자동으로 다시 시도해요...`;
+    retryTimer = setInterval(() => {
+      secs--;
+      if (!document.getElementById('retryCountdown')) { clearInterval(retryTimer); return; }
+      document.getElementById('retryCountdown').textContent = `${secs}초 후 자동으로 다시 시도해요...`;
+      if (secs <= 0) {
+        clearInterval(retryTimer);
+        handleCTA();
+      }
+    }, 1000);
+  }
+
+  function retryAfterDelay() {
+    clearInterval(retryTimer);
+    handleCTA();
+  }
+
+  // ── Share ──
+  function copyLink() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      showToast('🔗 링크가 복사됐어요!');
+    }).catch(() => {
+      showToast('링크: ' + window.location.href, 4000);
+    });
+  }
+
+  function nativeShare(mountain, tagline) {
+    navigator.share({
+      title: `${mountain} 등산 코스 추천 🌿`,
+      text: tagline,
+      url: window.location.href,
+    }).catch(() => {});
+  }
+
+  function shareKakao(mountain, tagline) {
+    // Kakao SDK가 없는 환경에서는 링크 복사로 fallback
+    if (window.Kakao && window.Kakao.isInitialized()) {
+      window.Kakao.Share.sendDefault({
+        objectType: 'text',
+        text: `🌿 ${mountain} 등산 코스 추천\n"${tagline}"\n\n나만의 숲길 코스를 찾아보세요!`,
+        link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
+      });
+    } else {
+      // fallback: 링크 복사 + 안내
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        showToast('💬 링크를 복사했어요! 카카오톡에 붙여넣기 해주세요.', 3500);
+      });
+    }
+  }
+</script>
+</body>
+</html>
